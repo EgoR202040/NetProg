@@ -35,17 +35,24 @@ int main()
 {
     try {
         int sock = socket(AF_INET,SOCK_DGRAM,0);
+        socklen_t len; 
+        if(sock==-1){
+            throw Net_exp("Ошибка создание сокета");
+            }
         struct sockaddr_in serverAddr {
         };
         serverAddr.sin_family = AF_INET;
         serverAddr.sin_port = htons(7777);
         serverAddr.sin_addr.s_addr = INADDR_ANY;
-        std::string message = getCurrentDateTime("now");
-        int rc = sendto(sock,message.c_str(),message.length(),0,(sockaddr*)(&serverAddr),sizeof serverAddr);
-        if(rc ==-1) {
-            throw std::invalid_argument("sendto fail");
-        }
-    } catch(std::invalid_argument& e) {
+        int rc = recvfrom(sock,buffer.get(),buff_size,MSG_WAITALL,(struct sockaddr *)&serverAddr,&len);
+        if(rc==-1){
+            throw Net_exp("Ошибка приёма данных от сервера");
+            }
+        buffer[rc]=0;
+        std::string recv_message(buffer.get(),rc);
+        std::cout << "Current time: " << getCurrentDateTime("now") << std::endl;
+        close(sock);
+    } catch(Net_exp& e) {
         std::cerr<< e.what() << std::endl;
     }
     return 0;
