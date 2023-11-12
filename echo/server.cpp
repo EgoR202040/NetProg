@@ -6,6 +6,7 @@
 #include <string>
 #include <unistd.h>// close
 #define buff_size 1024
+#define port 7777
 std::unique_ptr<char[]> buffer(new char[buff_size]);
 class Net_exp
 {
@@ -21,24 +22,32 @@ public:
 int main()
 {
     try {
-        int s;
-        socklen_t clientLength;
-        struct sockaddr_in serverAddr {
-        }, clientAddr{};
-        s = socket(AF_INET, SOCK_DGRAM, 0);
+        int queue_len = 100;
+        sockaddr_in * addr = new (sockaddr_in);
+        addr->sin_family = AF_INET;
+        addr->sin_port = htons(port);
+        inet_aton("127.0.0.1", &addr->sin_addr);
+        int s = socket(AF_INET, SOCK_STREAM, 0); // TCP
         if (s ==-1) {
             throw std::invalid_argument("Критическая ошибка: ошибка создание сокета сервера");
         }
-        serverAddr.sin_family = AF_INET;
-        serverAddr.sin_port = htons(7777);
-        serverAddr.sin_addr.s_addr = INADDR_ANY;
-        if (bind(s, (sockaddr *)(&serverAddr), sizeof(serverAddr)) ==-1) {
+        int rc =bind(s,(const sockaddr*)addr,sizeof(sockaddr_in));
+        if(rc==-1) {
             throw std::invalid_argument("Критическая ошибка: ошибка привязки сокета сервера");
         }
-        clientLength = sizeof(clientAddr);
+        rc = listen(s,queue_len);
+        if (rc ==-1) {
+            throw std::invalid_argument("Критическая ошибка: ошибка listen");
+        }
         while (true) {
             try {
-                int rc = recvfrom(s, buffer.get(), 1024, 0, (sockaddr*)(&clientAddr),&clientLength);
+                sockaddr_in * client_addr = new sockaddr_in;
+                socklen_t len = sizeof (sockaddr_in);
+                int work_sock = accept(s, (sockaddr*)(client_addr), &len);
+                if(work_sock==-1){
+                    throw Net_exp("Ошибка создания сокета клиента");
+                    }
+                rc = recv(work_sock, buffer.get(), 1024, 0);
                 if (rc ==-1) {
                     throw Net_exp("Ошибка принятие сообщения");
                 }
@@ -46,11 +55,11 @@ int main()
                 std::string message_client(buffer.get(),rc);
                 std::cout << "Получено сообщение от клиента: " << message_client<<std::endl;
             } catch(Net_exp& err) {
-                std::cerr <<err.what()<<std::endl;
+                std::cerr << "Ошибка: "<<err.what()<<std::endl;
             }
         }
-    }catch(std::invalid_argument& e){
+    } catch(std::invalid_argument& e) {
         std::cerr <<e.what() << std::endl;
-        }
+    }
     return 0;
 }
