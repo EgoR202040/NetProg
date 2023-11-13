@@ -54,6 +54,10 @@ int main()
                 buffer[rc]=0;
                 std::string message_client(buffer.get(),rc);
                 std::cout << "Получено сообщение от клиента: " << message_client<<std::endl;
+                rc = send(work_sock,buffer.get(),message_client.length(),0);
+                if(rc==-1){
+                	throw Net_exp("Ошибка отправки сообщения");
+                }
             } catch(Net_exp& err) {
                 std::cerr << "Ошибка: "<<err.what()<<std::endl;
             }

@@ -3,7 +3,7 @@
 CXX=g++
 CXXFLAGS=-O2 -Wall -DNDEBUG -std=c++17
 LDFLAGS= 
-PROJECT = echo_server_udp
+PROJECT = echo_server
 SOURCES := $(wildcard *.cpp)
 HEADERS := $(wildcard *.h)
 OBJECTS := $(SOURCES:%.cpp=%.o)
