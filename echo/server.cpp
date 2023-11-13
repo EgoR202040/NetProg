@@ -45,20 +45,22 @@ int main()
                 socklen_t len = sizeof (sockaddr_in);
                 int work_sock = accept(s, (sockaddr*)(client_addr), &len);
                 if(work_sock==-1){
+                	close(work_sock);
                     throw Net_exp("Ошибка создания сокета клиента");
                     }
+                do{
                 rc = recv(work_sock, buffer.get(), 1024, 0);
                 if (rc ==-1) {
+                	close(work_sock);
                     throw Net_exp("Ошибка принятие сообщения");
                 }
                 buffer[rc]=0;
                 std::string message_client(buffer.get(),rc);
-                std::cout << "Получено сообщение от клиента: " << message_client;
                 rc = send(work_sock,buffer.get(),message_client.length(),0);
                 if(rc==-1){
+                	close(work_sock);
                 	throw Net_exp("Ошибка отправки сообщения");
-                }
-                close(work_sock);
+                }}while(rc >0);
             } catch(Net_exp& err) {
                 std::cerr << "Ошибка: "<<err.what()<<std::endl;
             }
