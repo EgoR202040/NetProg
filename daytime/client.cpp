@@ -34,23 +34,26 @@ public:
 int main()
 {
     try {
-        int sock = socket(AF_INET,SOCK_DGRAM,0);
-        socklen_t len; 
+        int sock = socket(AF_INET,SOCK_DGRAM,0); 
         if(sock==-1){
             throw Net_exp("Ошибка создание сокета");
             }
         struct sockaddr_in serverAddr {
         };
         serverAddr.sin_family = AF_INET;
-        serverAddr.sin_port = htons(7777);
-        serverAddr.sin_addr.s_addr = INADDR_ANY;
-        int rc = recvfrom(sock,buffer.get(),buff_size,MSG_WAITALL,(struct sockaddr *)&serverAddr,&len);
+        serverAddr.sin_port = htons(13);
+        inet_aton("172.16.40.1",&serverAddr.sin_addr);
+        int s = sendto(sock,nullptr,0,0,(struct sockaddr*)&serverAddr,sizeof(serverAddr));
+        if(s<0){
+        	throw Net_exp("Ошибка отправки данных серверу для теста");
+        }
+        int rc = recvfrom(sock,buffer.get(),buff_size-1,0,nullptr,nullptr);
         if(rc==-1){
             throw Net_exp("Ошибка приёма данных от сервера");
             }
         buffer[rc]=0;
         std::string recv_message(buffer.get(),rc);
-        std::cout << "Current time: " << getCurrentDateTime("now") << std::endl;
+        std::cout << "Current time: " << recv_message << std::endl;
         close(sock);
     } catch(Net_exp& e) {
         std::cerr<< e.what() << std::endl;
