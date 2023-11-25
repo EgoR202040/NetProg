@@ -5,8 +5,8 @@
 #include <memory>//unique_ptr
 #include <string>
 #include <unistd.h>// close
-#define buff_size 1024
 #define port 7777
+#define buff_size 1024
 std::unique_ptr<char[]> buffer(new char[buff_size]);
 class Net_exp
 {
@@ -18,7 +18,6 @@ public:
         return message;
     }
 };
-
 int main()
 {
     try {
@@ -49,13 +48,22 @@ int main()
                     throw Net_exp("Ошибка создания сокета клиента");
                     }
                 do{
-                rc = recv(work_sock, buffer.get(), 1024, 0);
-                if (rc ==-1) {
+                while (true) {
+ 				int rc = recv(s, buffer.get(), buff_size, MSG_PEEK); // принять данные
+				if (rc ==-1) {
                 	close(work_sock);
                     throw Net_exp("Ошибка принятие сообщения");
                 }
+ 				if (rc < buff_size)
+ 					break;
+				int new_buff_size =  buff_size * 2;
+#undef buff_size
+#define buff_size new_buff_size
+ 				buffer = std::unique_ptr<char[]>(new char[buff_size]);
+				}
                 buffer[rc]=0;
                 std::string message_client(buffer.get(),rc);
+				recv(s, nullptr, rc, MSG_TRUNC);
                 rc = send(work_sock,buffer.get(),message_client.length(),0);
                 if(rc==-1){
                 	close(work_sock);
